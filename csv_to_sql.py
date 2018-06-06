@@ -126,7 +126,7 @@ def generate_sql_update_file(id_row, array_data):
             else:
                 temp_values.append(array_columns[r.index(v)] + " = " + v)
         # end for
-        line += ",".join(temp_values) + "WHERE " + id_row + " = " + r[id_row_index] + ")\n"
+        line += ",".join(temp_values) + "WHERE " + id_row + " = " + r[id_row_index] + ");\n"
         lines.append(line)
     # end for
     f.writelines(lines)
