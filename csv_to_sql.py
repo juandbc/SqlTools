@@ -97,7 +97,7 @@ def generate_sql_insert_file(array_data):
     values = set_data_format(array_data)  # Apply format to the values
 
     for r in values:
-        lines.append(insert_string + ",".join(r) + ")\n")  # Join the values to INSERT statement and append to the list
+        lines.append(insert_string + ",".join(r) + ");\n")  # Join the values to INSERT statement and append to the list
 
     f.writelines(lines)
     f.close()
