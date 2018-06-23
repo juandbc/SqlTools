@@ -1,22 +1,23 @@
 #!/usr/bin/python3
 # Python module for parsing CSV file to SQL operation like INSERT or UPDATE
 # Version 1.0
-import sys
 import argparse
 
 array_columns = []  # Array to store the columns name
 
 # parent parser
 parent_parser = argparse.ArgumentParser(add_help=False)
-parent_parser.add_argument("table-name", type=str, default="TABLE_NAME", help="table name")
+parent_parser.add_argument("table-name", type=str, default="TABLE_NAME", help="table name in the database")
 parent_parser.add_argument("data-separator", type=str, default=",",
                            help="character using as data separator in the CSV file")
 parent_parser.add_argument("quoting-character", type=str, default="'",
                            help="character using to quoting in the CSV file")
-parent_parser.add_argument("files-path", type=str, nargs=2, metavar=["source-file", "destination-file"],
-                           help="files path. First, path of the CSV file then, path of the SQL file to be generated.")
+parent_parser.add_argument("source-file", type=str, help="path of the CSV file")
+parent_parser.add_argument("destination-file", type=str, help="path of the SQL file to be generated")
 
-parser = argparse.ArgumentParser(description="Generate a SQL INSERT/UPDATE script file from a CSV file .",
+parser = argparse.ArgumentParser(description="""This script generate a SQL INSERT/UPDATE script file from a CSV file 
+                                                and should be executed using Python 3 or later. 
+                                                CSV file encoding must be UTF-8 and text cell must be quoted""",
                                  parents=[parent_parser])
 parser.add_argument("-o", dest="option", choices=["insert", "update"], type=str, required=True,
                     help="the type of statement that will be generated")
@@ -32,7 +33,7 @@ def parse_csv_file(file_path):
     :return List[list[str]]: array of records
     """
     print("Parsing CSV file")
-    f = open(file_path, "r")
+    f = open(file_path, mode="r", encoding="UTF-8")
 
     global array_columns
     list_values = []  # Create a list to store values
@@ -89,7 +90,7 @@ def generate_sql_insert_file(array_data):
     """
     print("Generating SQL file")
 
-    f = open(output_file_name, "w")  # open the file
+    f = open(output_file_name, mode="w", encoding="UTF-8")  # open the file
     lines = []
 
     insert_string = "INSERT INTO " + table_name + " (" + ",".join(array_columns) + ") VALUES ("
@@ -112,21 +113,20 @@ def generate_sql_update_file(id_row, array_data):
     """
     print("Generating SQL file")
 
-    f = open(output_file_name, "w")  # open the file
-    values = set_data_format(array_data)  # Apply format to the values
+    f = open(output_file_name, mode="w", encoding="UTF-8")  # open the file
+    formatted_values = set_data_format(array_data)  # Apply format to the values
     update_string = "UPDATE " + table_name + " SET "
     lines = []
     id_row_index = array_columns.index(id_row)
-    for r in values:
+    for row in formatted_values:
         line = update_string
         temp_values = []  # temporal array to store the columns and their values
-        for v in r:
-            if r.index(v) == id_row_index:  # exclude the id row from the columns to update
-                pass
-            else:
-                temp_values.append(array_columns[r.index(v)] + " = " + v)
+        for value in row:
+            i = row.index(value)
+            if i != id_row_index:  # exclude the id row from the columns to update
+                temp_values.append(array_columns[i] + " = " + value)
         # end for
-        line += ",".join(temp_values) + "WHERE " + id_row + " = " + r[id_row_index] + ");\n"
+        line += ",".join(temp_values) + "WHERE " + id_row + " = " + row[id_row_index] + ";\n"
         lines.append(line)
     # end for
     f.writelines(lines)
@@ -138,15 +138,19 @@ option = args["option"]
 table_name = args["table-name"]
 data_separator = args["data-separator"]
 quoting_character = args["quoting-character"]
-input_file_name = args["files-path"][0]
-output_file_name = args["files-path"][1]
+input_file_name = args["source-file"]
+output_file_name = args["destination-file"]
 id_row_name = args["id"]
+
+if id_row_name is None and option == "update":
+    print("You need to pass a id row name argument")
+    exit()
 
 print("Table name: " + table_name)
 print("Data separator: " + data_separator)
 print("Quoting character: " + quoting_character)
-print("ifn: " + input_file_name)
-print("ofn: " + output_file_name)
+print("input filename: " + input_file_name)
+print("output filename: " + output_file_name)
 if id_row_name is not None:
     print("id row: " + id_row_name)
 
